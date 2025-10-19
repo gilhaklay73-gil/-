@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>תוכנית אישית - טופס דינמי</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #e6f2ff; /* רקע תכלת */
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3, h4 {
+            color: #cc0000; /* כותרות באדום */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #999;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f0f8ff;
+        }
+        input[type="text"], input[type="date"], textarea, select {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #999;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .form-col {
+            flex: 1;
+            min-width: 200px;
+        }
+        .goals-table {
+            width: 100%;
+            border: 1px solid #999;
+            border-collapse: collapse;
+        }
+        .goals-table th, .goals-table td {
+            border: 1px solid #999;
+            padding: 8px;
+        }
+        .btn {
+            background-color: #cc0000;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #990000;
+        }
+        .btn-print {
+            background-color: #0066cc;
+        }
+        .btn-print:hover {
+            background-color: #004c99;
+        }
+        .btn-clear {
+            background-color: #555;
+        }
+        .btn-clear:hover {
+            background-color: #333;
+        }
+        .btn-group {
+            margin-top: 25px;
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .hidden {
+            display: none;
+        }
+        .no-print {
+            display: inline-block;
+        }
+
+        /* עיצוב להדפסה */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 15px;
+            }
+            .no-print {
+                display: none !important;
+            }
+            input, textarea, select {
+                border: 1px solid #000 !important;
+                background: transparent !important;
+                color: #000 !important;
+            }
+            input[type="radio"]:checked::after {
+                content: "●";
+                display: inline-block;
+                width: 100%;
+                text-align: center;
+                color: black;
+            }
+            table, th, td {
+                border: 1px solid black !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="pdf-content">
+
+    <h1 style="text-align: center;">תוכנית אישית לחניך</h1>
+
+    <!-- פרטי בסיס -->
+    <div class="form-row">
+        <div class="form-col">
+            <label for="group-name"><strong>שם הקבוצה:</strong></label>
+            <input type="text" id="group-name" name="group-name" placeholder="למשל: כפר נעלה - קבוצה ב'">
+        </div>
+        <div class="form-col">
+            <label for="student-name"><strong>שם החניך/ה:</strong></label>
+            <input type="text" id="student-name" name="student-name" placeholder="שם מלא">
+        </div>
+        <div class="form-col">
+            <label for="filler-name"><strong>שם ממלא/ת התוכנית:</strong></label>
+            <input type="text" id="filler-name" name="filler-name" placeholder="שם המדריך/ה, איש/ת הצוות">
+        </div>
+        <div class="form-col">
+            <label for="fill-date"><strong>תאריך מילוי:</strong></label>
+            <input type="date" id="fill-date" name="fill-date">
+        </div>
+    </div>
+
+    <!-- בחירת שכבה -->
+    <div class="section">
+        <label for="schlayer"><strong>בחר שכבה:</strong></label>
+        <select id="schlayer" onchange="toggleSkillsTable()">
+            <option value="">בחר...</option>
+            <option value="young">ז' - ט'</option>
+            <option value="senior">י' - יב'</option>
+        </select>
+    </div>
+
+    <!-- שאר הטופס (הכול נשאר כמו קודם) -->
+    <h2>שלב ראשון: שלב ההכרות והגדרת מיקום החניך</h2>
+
+    <h3>מרחב משפחתי</h3>
+    <table>
+        <tr>
+            <td>באיזו מידה משפיע מצבו המשפחתי על תפקודו של החניך</td>
+            <td>
+                <select name="family-impact">
+                    <option value="">בחר...</option>
+                    <option value="1">1 - נמוכה מאוד</option>
+                    <option value="2">2 - נמוכה</option>
+                    <option value="3">3 - בינונית</option>
+                    <option value="4">4 - גבוהה</option>
+                    <option value="5">5 - גבוהה מאוד</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>באיזו מידה משפיע הסביבה החברתית (חברים/ שכונה) על תפקודו של החניך<br><em>(לנעל'ה לא רלוונטי)</em></td>
+            <td>
+                <select name="social-env-impact">
+                    <option value="">בחר...</option>
+                    <option value="1">1 - נמוכה מאוד</option>
+                    <option value="2">2 - נמוכה</option>
+                    <option value="3">3 - בינונית</option>
+                    <option value="4">4 - גבוהה</option>
+                    <option value="5">5 - גבוהה מאוד</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>באיזו מידה ניתן להיעזר במשפחה ברגעים קשים לחניך</td>
+            <td>
+                <select name="family-support">
+                    <option value="">בחר...</option>
+                    <option value="1">1 - נמוכה מאוד</option>
+                    <option value="2">2 - נמוכה</option>
+                    <option value="3">3 - בינונית</option>
+                    <option value="4">4 - גבוהה</option>
+                    <option value="5">5 - גבוהה מאוד</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>מי מהמשפחה ניתן להיעזר</td>
+            <td><input type="text" name="family-contact"></td>
+        </tr>
+    </table>
+
+    <h3>מרחב חברתי</h3>
+    <table>
+        <tr><th>נושא</th><th>1<br>מצריך שיפור</th><th>2</th><th>3<br>משביע רצון</th><th>4</th><th>5<br>במיטבו</th></tr>
+        <tr><td>שייכות לכפר</td><td><input type="radio" name="belonging" value="1"></td><td><input type="radio" name="belonging" value="2"></td><td><input type="radio" name="belonging" value="3"></td><td><input type="radio" name="belonging" value="4"></td><td><input type="radio" name="belonging" value="5"></td></tr>
+        <tr><td>הנעה פנימית / שאיפה למצוינות</td><td><input type="radio" name="motivation" value="1"></td><td><input type="radio" name="motivation" value="2"></td><td><input type="radio" name="motivation" value="3"></td><td><input type="radio" name="motivation" value="4"></td><td><input type="radio" name="motivation" value="5"></td></tr>
+        <tr><td>יוזמה</td><td><input type="radio" name="initiative" value="1"></td><td><input type="radio" name="initiative" value="2"></td><td><input type="radio" name="initiative" value="3"></td><td><input type="radio" name="initiative" value="4"></td><td><input type="radio" name="initiative" value="5"></td></tr>
+        <tr><td>אחריות</td><td><input type="radio" name="responsibility" value="1"></td><td><input type="radio" name="responsibility" value="2"></td><td><input type="radio" name="responsibility" value="3"></td><td><input type="radio" name="responsibility" value="4"></td><td><input type="radio" name="responsibility" value="5"></td></tr>
+        <tr><td>עצמאות</td><td><input type="radio" name="independence" value="1"></td><td><input type="radio" name="independence" value="2"></td><td><input type="radio" name="independence" value="3"></td><td><input type="radio" name="independence" value="4"></td><td><input type="radio" name="independence" value="5"></td></tr>
+        <tr><td>תרבות שיח</td><td><input type="radio" name="dialog-culture" value="1"></td><td><input type="radio" name="dialog-culture" value="2"></td><td><input type="radio" name="dialog-culture" value="3"></td><td><input type="radio" name="dialog-culture" value="4"></td><td><input type="radio" name="dialog-culture" value="5"></td></tr>
+        <tr><td>נימוסים והליכות</td><td><input type="radio" name="manners" value="1"></td><td><input type="radio" name="manners" value="2"></td><td><input type="radio" name="manners" value="3"></td><td><input type="radio" name="manners" value="4"></td><td><input type="radio" name="manners" value="5"></td></tr>
+        <tr><td>התנהגות מינית</td><td><input type="radio" name="sexual-behavior" value="1"></td><td><input type="radio" name="sexual-behavior" value="2"></td><td><input type="radio" name="sexual-behavior" value="3"></td><td><input type="radio" name="sexual-behavior" value="4"></td><td><input type="radio" name="sexual-behavior" value="5"></td></tr>
+    </table>
+
+    <h3>תחום לימודי</h3>
+    <table>
+        <tr><td>נוכחות בבית הספר</td><td><select name="attendance"><option value="">בחר...</option><option value="1">1 - מצריך שיפור</option><option value="2">2 - ציון ביניים</option><option value="3">3 - משביע רצון</option><option value="4">4 - ציון ביניים</option><option value="5">5 - ביותרתו</option></select></td></tr>
+        <tr><td>תלמידאות</td><td><select name="studenthood"><option value="">בחר...</option><option value="1">1 - מצריך שיפור</option><option value="2">2 - ציון ביניים</option><option value="3">3 - משביע רצון</option><option value="4">4 - ציון ביניים</option><option value="5">5 - ביותרתו</option></select></td></tr>
+    </table>
+
+    <h3>תחום רגשי</h3>
+    <table>
+        <tr><td>סובלנות לאחר</td><td><select name="tolerance"><option value="">בחר...</option><option value="1">1 - מצריך שיפור</option><option value="2">2 - ציון ביניים</option><option value="3">3 - משביע רצון</option><option value="4">4 - ציון ביניים</option><option value="5">5 - ביותרתו</option></select></td></tr>
+        <tr><td>אלימות והתנהגויות חריגות</td><td><select name="violence"><option value="">בחר...</option><option value="1">1 - מצריך שיפור</option><option value="2">2 - ציון ביניים</option><option value="3">3 - משביע רצון</option><option value="4">4 - ציון ביניים</option><option value="5">5 - ביותרתו</option></select></td></tr>
+        <tr><td>שימוש בחומרים אסורים</td><td><select name="substances"><option value="">בחר...</option><option value="קבוע">שימוש קבוע</option><option value="מזדמן">שימוש מזדמן</option><option value="לעיתים רחוקות">לעיתים רחוקות</option><option value="בחברת משתמשים">בחברת משתמשים אבל לא משתמש</option><option value="לא משתמש">לא חשוף ולא משתמש</option></select></td></tr>
+    </table>
+
+    <div id="skills-young" class="section hidden">
+        <h2>כישורי חיים לחניך בשכבה הצעירה (ז'-ט')</h2>
+        <table>
+            <tr><th>#</th><th>כישור</th><th>עומד במלוא הדרישות</th><th>עומד חלקית</th><th>אינו עומד</th></tr>
+            <tr><td>1</td><td>קבלת החלטות ופתרון בעיות</td><td><input type="radio" name="skill1-young" value="5"></td><td><input type="radio" name="skill1-young" value="3"></td><td><input type="radio" name="skill1-young" value="1"></td></tr>
+            <tr><td>2</td><td>ניהול סדר יום אישי</td><td><input type="radio" name="skill2-young" value="5"></td><td><input type="radio" name="skill2-young" value="3"></td><td><input type="radio" name="skill2-young" value="1"></td></tr>
+            <tr><td>3</td><td>שיפוט ואבחנה בין טוב לרע</td><td><input type="radio" name="skill3-young" value="5"></td><td><input type="radio" name="skill3-young" value="3"></td><td><input type="radio" name="skill3-young" value="1"></td></tr>
+            <tr><td>4</td><td>ניהול תקציב אישי</td><td><input type="radio" name="skill4-young" value="5"></td><td><input type="radio" name="skill4-young" value="3"></td><td><input type="radio" name="skill4-young" value="1"></td></tr>
+            <tr><td>5</td><td>התמודדות עם עומס ולחץ</td><td><input type="radio" name="skill5-young" value="5"></td><td><input type="radio" name="skill5-young" value="3"></td><td><input type="radio" name="skill5-young" value="1"></td></tr>
+        </table>
+    </div>
+
+    <div id="skills-senior" class="section hidden">
+        <h2>כישורי חיים לחניך בשכבה הבוגרת (י'-יב')</h2>
+        <table>
+            <tr><th>#</th><th>כישור</th><th>עומד במלוא הדרישות (5)</th><th>עומד חלקית (3)</th><th>אינו עומד (1)</th></tr>
+            <tr><td>1</td><td>טיפול עצמאי בעניינים אישיים</td><td><input type="radio" name="skill1-senior" value="5"></td><td><input type="radio" name="skill1-senior" value="3"></td><td><input type="radio" name="skill1-senior" value="1"></td></tr>
+            <tr><td>2</td><td>גיבוש עמדה לגבי שירות בצה"ל<br><em>(נעל'ה – רק יב')</em></td><td><input type="radio" name="skill2-senior" value="5"></td><td><input type="radio" name="skill2-senior" value="3"></td><td><input type="radio" name="skill2-senior" value="1"></td></tr>
+            <tr><td>3</td><td>ניהול פיננסי אישי עצמאי</td><td><input type="radio" name="skill3-senior" value="5"></td><td><input type="radio" name="skill3-senior" value="3"></td><td><input type="radio" name="skill3-senior" value="1"></td></tr>
+            <tr><td>4</td><td>דאגה לבריאות האישית</td><td><input type="radio" name="skill4-senior" value="5"></td><td><input type="radio" name="skill4-senior" value="3"></td><td><input type="radio" name="skill4-senior" value="1"></td></tr>
+            <tr><td>5</td><td>התנסות בעולם העבודה</td><td><input type="radio" name="skill5-senior" value="5"></td><td><input type="radio" name="skill5-senior" value="3"></td><td><input type="radio" name="skill5-senior" value="1"></td></tr>
+            <tr><td>6</td><td>ידע כללי ואקטואלי</td><td><input type="radio" name="skill6-senior" value="5"></td><td><input type="radio" name="skill6-senior" value="3"></td><td><input type="radio" name="skill6-senior" value="1"></td></tr>
+        </table>
+    </div>
+
+    <h2>שלב שלישי: בניית תוכנית אישית</h2>
+    <p><strong>תאריך יעד לבדיקה:</strong> <input type="date" name="review-date"></p>
+
+    <h3>נקודה ראשונה</h3>
+    <p><strong>בחירה מתוך הנקודות שעלו:</strong> <input type="text" name="goal1-topic"></p>
+    <p><strong>יעדי ביניים:</strong></p>
+    <textarea name="goal1-objectives" placeholder="..."></textarea>
+    <table class="goals-table">
+        <tr><th>פעולה</th><th>אחראי</th></tr>
+        <tr><td><input type="text" name="action1-1"></td><td><input type="text" name="responsible1-1"></td></tr>
+        <tr><td><input type="text" name="action1-2"></td><td><input type="text" name="responsible1-2"></td></tr>
+        <tr><td><input type="text" name="action1-3"></td><td><input type="text" name="responsible1-3"></td></tr>
+    </table>
+
+    <h3>נקודה שנייה</h3>
+    <p><strong>בחירה מתוך הנקודות שעלו:</strong> <input type="text" name="goal2-topic"></p>
+    <p><strong>יעדי ביניים:</strong></p>
+    <textarea name="goal2-objectives"></textarea>
+    <table class="goals-table">
+        <tr><th>פעולה</th><th>אחראי</th></tr>
+        <tr><td><input type="text" name="action2-1"></td><td><input type="text" name="responsible2-1"></td></tr>
+        <tr><td><input type="text" name="action2-2"></td><td><input type="text" name="responsible2-2"></td></tr>
+        <tr><td><input type="text" name="action2-3"></td><td><input type="text" name="responsible2-3"></td></tr>
+    </table>
+
+    <h3>נקודה שלישית</h3>
+    <p><strong>בחירה מתוך הנקודות שעלו:</strong> <input type="text" name="goal3-topic"></p>
+    <p><strong>יעדי ביניים:</strong></p>
+    <textarea name="goal3-objectives"></textarea>
+    <table class="goals-table">
+        <tr><th>פעולה</th><th>אחראי</th></tr>
+        <tr><td><input type="text" name="action3-1"></td><td><input type="text" name="responsible3-1"></td></tr>
+        <tr><td><input type="text" name="action3-2"></td><td><input type="text" name="responsible3-2"></td></tr>
+        <tr><td><input type="text" name="action3-3"></td><td><input type="text" name="responsible3-3"></td></tr>
+    </table>
+
+    <!-- כפתורים -->
+    <div class="btn-group">
+        <button class="btn no-print" onclick="exportToPDF()">ייצוא ל-PDF</button>
+        <button class="btn btn-print no-print" onclick="printForm()">הדפס</button>
+        <button class="btn btn-clear no-print" onclick="clearForm()">נקה טופס</button>
+    </div>
+
+</div>
+
+<script>
+    function toggleSkillsTable() {
+        const layer = document.getElementById('schlayer').value;
+        const young = document.getElementById('skills-young');
+        const senior = document.getElementById('skills-senior');
+        young.classList.add('hidden');
+        senior.classList.add('hidden');
+        if (layer === 'young') young.classList.remove('hidden');
+        else if (layer === 'senior') senior.classList.remove('hidden');
+    }
+
+    function exportToPDF() {
+        const { jsPDF } = window.jspdf;
+        const content = document.getElementById('pdf-content');
+        html2canvas(content, { scale: 1.2 }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('pr', 'mm', 'a4');
+            const imgWidth = 210;
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= 297;
+            while (heightLeft >= 0) {
+                pdf.addPage();
+                position = heightLeft - imgHeight;
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= 297;
+            }
+            pdf.save('תוכנית_אישיית_חניך.pdf');
+        }).catch(err => {
+            alert('שגיאה ביצוא ל-PDF. ודא שאתה מחובר לאינטרנט.');
+            console.error(err);
+        });
+    }
+
+    function printForm() {
+        window.print();
+    }
+
+    function clearForm() {
+        if (confirm('האם אתה בטוח שברצונך לנקות את כל הטופס?')) {
+            document.querySelectorAll('input, textarea, select').forEach(el => {
+                if (el.type === 'radio' || el.type === 'checkbox') el.checked = false;
+                else el.value = '';
+            });
+            document.getElementById('skills-young').classList.add('hidden');
+            document.getElementById('skills-senior').classList.add('hidden');
+            document.getElementById('schlayer').value = '';
+        }
+    }
+</script>
+
+</body>
+</html>
